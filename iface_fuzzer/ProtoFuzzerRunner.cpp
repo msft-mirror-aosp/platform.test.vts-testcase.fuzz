@@ -17,14 +17,16 @@
 #include "ProtoFuzzerRunner.h"
 
 #include <dlfcn.h>
-
 #include <sstream>
 
-#include <hidl/ServiceManagement.h>
-
 #include "utils/InterfaceSpecUtil.h"
+#include "vintf/HalManifest.h"
+#include "vintf/Version.h"
+#include "vintf/VintfObject.h"
 
-using android::hardware::getAllHalInstanceNames;
+using android::vintf::HalManifest;
+using android::vintf::Version;
+
 using std::cerr;
 using std::cout;
 using std::string;
@@ -53,10 +55,12 @@ static string GetServiceName(const CompSpec &comp_spec) {
   string hal_name = comp_spec.package();
   string iface_name = comp_spec.component_name();
 
-  auto descriptor =
-      hal_name + "@" + GetVersionString(comp_spec) + "::" + iface_name;
-  auto instance_names = getAllHalInstanceNames(descriptor);
-
+  auto instance_names =
+      ::android::vintf::VintfObject::GetDeviceHalManifest()->getHidlInstances(
+          hal_name,
+          Version(comp_spec.component_type_version_major(),
+                  comp_spec.component_type_version_minor()),
+          iface_name);
   if (instance_names.empty()) {
     cerr << "HAL service name not available in VINTF." << endl;
     std::abort();
